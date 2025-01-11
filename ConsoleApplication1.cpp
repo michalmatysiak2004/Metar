@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-
+#include <windows.h>
 
 using namespace std;
 
@@ -25,8 +25,14 @@ struct Data { // struct danych
 
     int visibility = 0; // widocznosc
     int phenomena; // zjawiska atmosferyczne
-    int cloudcover;
-    int height;
+
+    bool okclouds = false;
+    int diffrentcloudcovers = 0;
+    char cloudcover[5];
+    int height[5];
+
+    
+
     int temperature;
     int rose_temperature;
     
@@ -49,6 +55,17 @@ void print_metar(struct Data* data) {
         cout << "Widzialność: ";
         if (data[i].visibility == -1) cout << "dobra" << endl;
         else cout << data[i].visibility << endl;
+
+        for (int j = 0; j < data[j].diffrentcloudcovers; j++) {
+            cout << "Zachmurzenie: ";
+            if (data[i].cloudcover[j] == 'S') cout << "znikome  0/8";
+            if (data[i].cloudcover[j] == 'E') cout << " o zapelnieniu od  1/8 do 2/8";
+            if (data[i].cloudcover[j] == 'C') cout << " o zapelnieniu od  3/8 do 4/8";
+            if (data[i].cloudcover[j] == 'B') cout << " o zapelnieniu od  5/8 do 7/8";
+            if (data[i].cloudcover[j] == 'V') cout << "całkowite ";
+            cout << "z podstawa chmur " << 100 * data[i].height[j] << "stop nad terenem" << endl;
+           
+        }
         cout << "-------------------------------------" << endl;
     }
 }
@@ -101,10 +118,11 @@ struct Data handle_word(const char* word, struct  Data data) {
     }
     else if (strlen(word) == 5 && word[0] == 'C' && word[1] == 'A' && word[2] == 'V' && word[3] == 'O' && word[4] == 'K') {
 
-        data.cloudcover = 0;
+        data.okclouds = true;
         data.visibility = -1; // dobra widocznosc
 
     }
+    
     else if (word[3] == 'V') {
         data.lowhighangles = true;
         char lowangle_str[3] = { word[0],word[1],word[2] };
@@ -112,6 +130,16 @@ struct Data handle_word(const char* word, struct  Data data) {
 
         data.lowangle = atoi(lowangle_str);
         data.highangle = atoi(highangle_str);
+    }
+    else if (strlen(word) == 6) {
+        if (word[1] == 'K') {
+            data.cloudcover[data.diffrentcloudcovers] = word[0];
+        }
+        else data.cloudcover[data.diffrentcloudcovers] = word[1];
+        char height_str[3] = { word[3], word[4], word[5] };
+
+        data.height[data.diffrentcloudcovers] = atoi(height_str);
+        data.diffrentcloudcovers++;
     }
     else if (word[2] == '/') { 
         
@@ -155,6 +183,8 @@ void program() {
     int counter = 0;
     while (file.getline(single_metar, sizeof(single_metar))) {
         data.lowhighangles = false;
+        data.diffrentcloudcovers = 0;
+        data.okclouds = false;
         char* context = nullptr; // Kontekst wymagany przez strtok_s
         char* token = strtok_s(single_metar, " ", &context);
         while (token != nullptr) {
@@ -201,5 +231,6 @@ void menu() {
 int main()
 {
     menu();
+    SetConsoleOutputCP(CP_UTF8);
 }
 
