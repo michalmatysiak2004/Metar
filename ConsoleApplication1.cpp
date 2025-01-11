@@ -56,7 +56,7 @@ void print_metar(struct Data* data) {
         if (data[i].visibility == -1) cout << "dobra" << endl;
         else cout << data[i].visibility << endl;
 
-        for (int j = 0; j < data[j].diffrentcloudcovers; j++) {
+        for (int j = 0; j < data[i].diffrentcloudcovers; j++) {
             cout << "Zachmurzenie: ";
             if (data[i].cloudcover[j] == 'S') cout << "znikome  0/8";
             if (data[i].cloudcover[j] == 'E') cout << " o zapelnieniu od  1/8 do 2/8";
@@ -165,7 +165,7 @@ void program() {
 
 
     Data lastmetars[3]; // tablica 3 ostatnich metarów
-    Data data;
+    
 
 
 
@@ -182,9 +182,7 @@ void program() {
     char single_metar[256]; // Bufor do przechowywania linii z pliku
     int counter = 0;
     while (file.getline(single_metar, sizeof(single_metar))) {
-        data.lowhighangles = false;
-        data.diffrentcloudcovers = 0;
-        data.okclouds = false;
+        Data data;
         char* context = nullptr; // Kontekst wymagany przez strtok_s
         char* token = strtok_s(single_metar, " ", &context);
         while (token != nullptr) {
