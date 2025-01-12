@@ -35,6 +35,8 @@ struct Data { // struct danych
 
     int temperature;
     int rose_temperature;
+
+    int preasure;
     
 };
 
@@ -55,17 +57,22 @@ void print_metar(struct Data* data) {
         cout << "Widzialność: ";
         if (data[i].visibility == -1) cout << "dobra" << endl;
         else cout << data[i].visibility << endl;
-
+        
         for (int j = 0; j < data[i].diffrentcloudcovers; j++) {
             cout << "Zachmurzenie: ";
-            if (data[i].cloudcover[j] == 'S') cout << "znikome  0/8";
-            if (data[i].cloudcover[j] == 'E') cout << " o zapelnieniu od  1/8 do 2/8";
-            if (data[i].cloudcover[j] == 'C') cout << " o zapelnieniu od  3/8 do 4/8";
-            if (data[i].cloudcover[j] == 'B') cout << " o zapelnieniu od  5/8 do 7/8";
-            if (data[i].cloudcover[j] == 'V') cout << "całkowite ";
-            cout << "z podstawa chmur " << 100 * data[i].height[j] << "stop nad terenem" << endl;
-           
+            if (data[i].okclouds == true) cout << "ok";
+            else if (data[i].cloudcover[j] == 'S') cout << "znikome  0/8";
+            else if (data[i].cloudcover[j] == 'E') cout << " o zapelnieniu od  1/8 do 2/8";
+            else if (data[i].cloudcover[j] == 'C') cout << " o zapelnieniu od  3/8 do 4/8";
+            else if (data[i].cloudcover[j] == 'B') cout << " o zapelnieniu od  5/8 do 7/8";
+            else if (data[i].cloudcover[j] == 'V') cout << "całkowite ";
+            if(data[i].okclouds == false) cout << "z podstawa chmur " << 100 * data[i].height[j] << "stop nad terenem" << endl;
+            
         }
+
+        cout << "Cisnienie: " << data[i].preasure << "hPa";
+
+
         cout << "-------------------------------------" << endl;
     }
 }
@@ -122,7 +129,11 @@ struct Data handle_word(const char* word, struct  Data data) {
         data.visibility = -1; // dobra widocznosc
 
     }
-    
+    else if (word[0] == 'Q') {
+        char pres_str[5] = { word[1], word[2], word[3],word[4], '\0' };
+        data.preasure = atoi(pres_str);
+    }
+    // zmienny wiatr
     else if (word[3] == 'V') {
         data.lowhighangles = true;
         char lowangle_str[3] = { word[0],word[1],word[2] };
@@ -131,6 +142,29 @@ struct Data handle_word(const char* word, struct  Data data) {
         data.lowangle = atoi(lowangle_str);
         data.highangle = atoi(highangle_str);
     }
+    // temperaturaaaaaaaa
+    else if (word[2] == '/' || word[3] == '/') {
+        char temp_str[3];
+        if (word[0] == 'M') {
+            temp_str[0] = word[1];
+            temp_str[1] = word[2];
+            temp_str[2] = '\0';
+        }
+        else {
+            temp_str[0] = word[0];
+            temp_str[1] = word[1];
+            temp_str[2] = '\0';
+        }
+            
+          
+        char rose_temp_str[3] = { word[strlen(word)-2], word[strlen(word)-1], '\0'};
+        
+        data.temperature = atoi(temp_str);  
+        data.rose_temperature = atoi(rose_temp_str);  
+        if (word[3] == 'M') data.rose_temperature *= -1;
+        if (word[0] == 'M') data.temperature *= -1;
+    }
+
     else if (strlen(word) == 6) {
         if (word[1] == 'K') {
             data.cloudcover[data.diffrentcloudcovers] = word[0];
@@ -140,14 +174,6 @@ struct Data handle_word(const char* word, struct  Data data) {
 
         data.height[data.diffrentcloudcovers] = atoi(height_str);
         data.diffrentcloudcovers++;
-    }
-    else if (word[2] == '/') { 
-        
-        char temp_str[3] = { word[0], word[1], '\0' };  
-        char rose_temp_str[3] = { word[3], word[4], '\0' };  
-
-        data.temperature = atoi(temp_str);  
-        data.rose_temperature = atoi(rose_temp_str);  
     }
     else if (strlen(word) == 4) {
         char vis_str[4] = { word[0], word[1],word[2], word[3] };
