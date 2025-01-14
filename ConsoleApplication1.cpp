@@ -1,53 +1,57 @@
 ﻿#include <iostream>
 #include <fstream>
-#include <cstring>
 #include <windows.h>
 using namespace std;
 
 struct Data { // struct danych 
-    char airport_code[4] = { 0 };
+    char airport_code[5] = { 0 };
     int day=0;
     int hour=0;
     int minutes = 0;
-
     int angle=-1;  // kat wiatru 
     int lowangle = -1;
     int highangle = -1;
     bool lowhighangles = false;
-
     int velocity; // predkosc wiatru
     int maxvelocity; // predkosc w porywach
-
-
     int visibility = 0; // widocznosc
     bool visibility_set = false;
-
-    
-   
-    
-
-
     bool okclouds = false;
     int diffrentcloudcovers = 0;
     char cloudcover[5];
     int height[5];
-    
-    
-
     int temperature;
     int rose_temperature;
-
     int preasure;
-
     char weather_phenomena[5][5];
     char intensity[5][2];
     int phen_count = 0;
     bool phenomena_set;
-    
+    bool nosig = false;
+    bool nsc = false;
 };
 struct WeatherEvent {
     const char* code;
     const char* description;
+};
+
+struct Airports {
+    const char* code;
+    const char* name;
+};
+Airports polishAirports[] = {
+       {"EPWA", "Warszawa-Lotnisko Chopina"},
+       {"EPMO", "Warszawa-Modlin"},
+       {"EPGD", "Gdańsk-Rębiechowo"},
+       {"EPKT", "Katowice-Pyrzowice"},
+       {"EPKK", "Kraków-Balice"},
+       {"EPWR", "Wrocław-Strachowice"},
+       {"EPRZ", "Rzeszów-Jasionka"},
+       {"EPPO", "Poznań-Ławica"},
+       {"EPSC", "Szczecin-Goleniów"},
+       {"EPBY", "Bydgoszcz-Szwederowo"},
+       {"EPZG", "Zielona Góra-Babimost"},
+       {"EPRA", "Radom-Sadków"},
 };
 
 WeatherEvent events[] = {
@@ -82,11 +86,6 @@ WeatherEvent events[] = {
     {"Bl", "zawieja"},
     {"FZ", "zamrażanie"},
     {"BC","plastry"}
- 
-
- 
-
-
 };
  
 int word_lenght(char* wyraz) {
@@ -103,7 +102,7 @@ const char* findDescriptionIntensivity(const char* code) {
              return intensivity[i].description;
          }
      }
-     return "Nieznany kod";
+     return "??";
 }
 const char* findDescriptionEvents(const char* code) {
     for (int i = 0; i < sizeof(events) / sizeof(events[0]); ++i) {
@@ -111,15 +110,32 @@ const char* findDescriptionEvents(const char* code) {
             return events[i].description;
         }
     }
-    return "Nieznany kod";
+    return "??";
+}
+
+const char* findAirports(const char* code) {
+    for (int i = 0; i < sizeof(polishAirports) / sizeof(polishAirports[0]); ++i) {
+        if (strcmp(polishAirports[i].code, code) == 0) {
+            return polishAirports[i].name;
+        }
+    }
+    return "??";
+}
+const char* findAirportsCode(const char* name) {
+    for (int i = 0; i < sizeof(polishAirports) / sizeof(polishAirports[0]); ++i) {
+        if (strcmp(polishAirports[i].name, name) == 0) {
+            return polishAirports[i].code;
+        }
+    }
+    return "??";
 }
 
 
-
-void print_metar(struct Data* data) {
+/*void print_metar2(struct Data* data) {
     for (int i = 0; i < 3; ++i) {
         if (data[i].airport_code[0] == 'E') {
-            cout << "GDANSK" << endl;
+            cout << findAirports(data[i].airport_code) << endl;
+           
         }
         cout << "Dzien: " << data[i].day << " godzina: " << data[i].hour
             << ":" << (data[i].minutes < 10 ? "0" : "") << data[i].minutes << endl;
@@ -186,18 +202,84 @@ void print_metar(struct Data* data) {
             
         }
         
-
-
-
-
-
-
-
-
         cout << endl << "-------------------------------------" << endl;
     }
 }
+*/
+void print_metar(struct Data data) {
+    
+        if (data.airport_code[0] == 'E') {
+            cout << findAirports(data.airport_code) << endl;
 
+        }
+        cout << "Dzien: " << data.day << " godzina: " << data.hour
+            << ":" << (data.minutes < 10 ? "0" : "") << data.minutes << endl;
+        cout << "Wiatr: ";
+        if (data.angle == -2) {
+            cout << "zmienia się o więcej niż 180° lub  nie można określić kierunku.";
+        }
+        else {
+            cout << data.angle << "°";
+        }
+
+        cout <<"prędkość  " << data.velocity << " wezlow" << endl;
+        if (data.lowhighangles == true) {
+            cout << "Skrajne wartości kierunki wiatru od: " << data.lowangle << " do " << data.highangle << endl;
+        };
+        cout << "Temperatura: " << data.temperature << "°C" << endl;
+        cout << "Temperatura punktu rosy: " << data.rose_temperature << "°C" << endl;
+        cout << "Widzialność: ";
+        if (data.visibility == -1) cout << "dobra" << endl;
+        else cout << data.visibility << endl;
+        if (data.nsc == true) cout <<  "Brak znaczących chmur" << endl;
+        for (int j = 0; j < data.diffrentcloudcovers; j++) {
+
+            if (data.okclouds == true) cout << "ok";
+            else if (data.cloudcover[j] == 'S') cout << "Brak zachmurzenia";
+            else if (data.cloudcover[j] == 'E') cout << "Zachmurzenie o zapelnieniu od  1/8 do 2/8";
+            else if (data.cloudcover[j] == 'C') cout << "Zachmurzenie o zapelnieniu od  3/8 do 4/8";
+            else if (data.cloudcover[j] == 'B') cout << "Zachmurzenie o zapelnieniu od  5/8 do 7/8";
+            else if (data.cloudcover[j] == 'V') cout << "Zachmurzenie całkowite ";
+            if(data.okclouds == false) cout << "z podstawą chmur " << 100 * data.height[j] << " stóp nad terenem" << endl;
+
+        }
+
+        cout << "Cisnienie: " << data.preasure << "hPa" << endl;
+
+
+
+
+
+
+        if(data.phen_count>0) cout << "Zjawiska pogodowe: " << endl;
+        for (int j = 0; j < data.phen_count; j++) {
+            if (word_lenght(data.weather_phenomena[j]) == 2) {
+                cout << findDescriptionEvents(data.weather_phenomena[j]);
+            }
+            if (word_lenght(data.weather_phenomena[j]) == 3) {
+                char code1[2] = { data.weather_phenomena[j][0], '\0' };
+                cout << findDescriptionIntensivity(code1) << " ";
+                char code2[3] = { data.weather_phenomena[j][1] ,data.weather_phenomena[j][2] ,'\0' };
+                cout << findDescriptionEvents(code2);
+            }
+            if (word_lenght(data.weather_phenomena[j]) == 4) {
+                char code1[2] = { data.weather_phenomena[j][0], '\0' };
+                cout << findDescriptionIntensivity(code1) << " ";
+                char code2[3] = { data.weather_phenomena[j][1] ,data.weather_phenomena[j][2] ,'\0' };
+                cout << findDescriptionEvents(code2);
+            }
+
+            cout << endl;
+
+
+
+
+
+        }
+        if (data.nosig == true) cout << "Brak przewidywanych znaczących zmian pogody w ciągu najbliższych 2 godz.";
+        cout << endl << "-------------------------------------" << endl;
+    
+}
 void switchlastmetars(struct Data * lasts, struct Data current,int counter) { 
             lasts[2] = lasts[1];
             lasts[1] = lasts[0];
@@ -209,7 +291,8 @@ void switchlastmetars(struct Data * lasts, struct Data current,int counter) {
 void save_metar(struct Data data, ofstream& file) {
     
         if (data.airport_code[0] == 'E') {
-            file << "GDANSK" << endl;
+            file << findAirports(data.airport_code) << endl;
+
         }
         file << "Dzien: " << data.day << " godzina: " << data.hour
             << ":" << (data.minutes < 10 ? "0" : "") << data.minutes << endl;
@@ -230,7 +313,7 @@ void save_metar(struct Data data, ofstream& file) {
         file << "Widzialność: ";
         if (data.visibility == -1) file << "dobra" << endl;
         else file << data.visibility << endl;
-
+        if (data.nsc == true) file << "Brak znaczących chmur" << endl;
         for (int j = 0; j < data.diffrentcloudcovers; j++) {
 
             if (data.okclouds == true) file << "ok";
@@ -276,7 +359,7 @@ void save_metar(struct Data data, ofstream& file) {
 
         }
 
-
+        if (data.nosig == true) file << "Brak przewidywanych znaczących zmian pogody w ciągu najbliższych 2 godz.";
 
 
 
@@ -293,6 +376,7 @@ struct Data handle_word(const char* word, struct  Data data) {
         for (int i = 0; i < 4; i++) {
             data.airport_code[i] = word[i];
         }
+        data.airport_code[4] = '\0';
     }
 
     else if (data.day == 0) {
@@ -343,8 +427,15 @@ struct Data handle_word(const char* word, struct  Data data) {
         data.visibility_set = true;
 
     }
-    
-   
+    else if (strlen(word) == 5 && word[0] == 'N' && word[1] == 'O' && word[2] == 'S' && word[3] == 'I' && word[4] == 'G') {
+
+        data.nosig = true;
+
+    }
+    else if (word[0] == 'N' && word[1] == 'S' && word[2] == 'C') {
+        data.nsc = true;
+
+    }
     // temperatura
     else if (word[2] == '/' || word[3] == '/') {
         char temp_str[3];
@@ -391,7 +482,6 @@ struct Data handle_word(const char* word, struct  Data data) {
         
         for (int i = 0; i < strlen(word); i++) {
             data.weather_phenomena[data.phen_count][i] = word[i];
-            cout << data.weather_phenomena[data.phen_count][i];
         }
         data.weather_phenomena[data.phen_count][strlen(word)] = '\0';
         data.phen_count++;
@@ -401,7 +491,127 @@ struct Data handle_word(const char* word, struct  Data data) {
     return data;
 }
 
+void sortuj_po_nazwie(const char* filename) {
+    ifstream inputFile(filename);
+    if (!inputFile.is_open()) {
+        std::cerr << "Nie można otworzyć pliku: " << filename << "\n";
+        return;
+    }
+
+    ofstream outputFile("sorted.txt");
+    if (!outputFile.is_open()) {
+        std::cerr << "Nie można otworzyć pliku wyjściowego: sorted.txt\n";
+        inputFile.close();
+        return;
+    }
+
+    char line[256];
+    for (size_t i = 0; i < sizeof(polishAirports) / sizeof(Airports); ++i) {
+        const char* currentCode = polishAirports[i].code;
+        // Resetujemy pozycję w pliku do początku dla każdego kodu
+        inputFile.clear();
+        inputFile.seekg(0, std::ios::beg);
+
+        while (inputFile.getline(line, sizeof(line))) {
+            
+            if (std::strncmp(line, currentCode, std::strlen(currentCode)) == 0) {
+                outputFile << line << "\n";
+            }
+        }
+    }
+
+    inputFile.close();
+    outputFile.close();
+
+    std::cout << "Zapisano posortowane dane w pliku sorted.txt\n";
+}
+void printnewestthree(const char* filename) {
+    ifstream file;
+    file.open(filename);
+    if (!file.is_open()) {
+        cerr << "Nie mozna otworzyc pliku dane.txt" << endl;
+        return;
+    }
+    char single_metar[256];
+    for (int i = 0; i < 4; i++) {
+        file.getline(single_metar, sizeof(single_metar));
+        Data data;
+        char* context = nullptr;
+        char* token = strtok_s(single_metar, " ", &context);
+        while (token != nullptr) {
+            data = handle_word(token, data);
+            token = strtok_s(nullptr, " ", &context);
+        }
+        print_metar(data);
+    }
+    file.close();
+}
+
+void printgenerated() {
+    ifstream file;
+    file.open("generated_metars.txt");
+    char line[256]; // Bufor do przechowywania jednej linii tekstu
+    if (file.getline(line, sizeof(line))) { // Pobierz jedną linię tekstu z pliku
+        cout << "Wczytana linia: " << line << endl; // Wypisz linię na konsolę
+    }
+    
+
+    file.close(); // Zamknij plik
+}
+void generate_metar() {
+    ofstream file;
+    file.open("generated_metars.txt");
+    system("cls");
+    char bufor[256];
+    int liczba;
+    cout << "Podaj: Miasto-NazwaLostnika: ";
+    cin >> bufor;
+    file << findAirportsCode(bufor) << "  ";
+    cout << "Podaj: dzien miesiaca: ";
+    cin >> liczba;
+    if (liczba < 10) file << "0";
+    file << liczba;
+    cout << "Podaj godzine: (format godzinaminuta)";
+    cin >> liczba;
+    file << liczba << "Z";
+    // Kierunek i prędkość wiatru
+    cout << "Podaj kierunek wiatru (w stopniach): ";
+    cin >> liczba;
+    if (liczba < 10) file << "00";
+    else if (liczba < 100) file << "0";
+    file << liczba;
+
+    cout << "Podaj prędkość wiatru (w węzłach): ";
+    cin >> liczba;
+    if (liczba < 10) file << "0";
+    file << liczba << "KT ";
+
+    // Widzialność i chmury
+    file << "9999 ";
+
+    // Temperatura i punkt rosy
+    cout << "Podaj temperaturę (w °C): ";
+    cin >> liczba;
+    if (liczba < 0) file << "M" << abs(liczba) << "/";
+    else file << liczba << "/";
+
+    cout << "Podaj punkt rosy (w °C): ";
+    cin >> liczba;
+    if (liczba < 0) file << "M" << abs(liczba) << " ";
+    else file << liczba << " ";
+
+    // Ciśnienie atmosferyczne
+    cout << "Podaj ciśnienie atmosferyczne (w hPa): ";
+    cin >> liczba;
+    file << "Q" << liczba << endl;
+    file.close();
+
+    printgenerated();
+
+    
+}
 void program() {
+    system("cls");
     char filename_in[256];
     char filename_out[256];
 
@@ -410,16 +620,13 @@ void program() {
     cin >> filename_in;
     cout << "Podaj nazwę pliku wyjsciowego: ";
     cin >> filename_out;
+    sortuj_po_nazwie(filename_in);
     ifstream file;
-    file.open(filename_in);
+    file.open("sorted.txt");
     ofstream file2;
     file2.open(filename_out, ios::app); 
-
-
-    Data lastmetars[3]; 
     
-
-
+    printnewestthree(filename_in);
 
     if (!file.is_open()) {
         cerr << "Nie mozna otworzyc pliku dane.txt" << endl;
@@ -435,34 +642,34 @@ void program() {
     int counter = 0;
     while (file.getline(single_metar, sizeof(single_metar))) {
         Data data;
-        char* context = nullptr; // Kontekst wymagany przez strtok_s
+        char* context = nullptr; 
         char* token = strtok_s(single_metar, " ", &context);
         while (token != nullptr) {
-            data = handle_word(token, data); // Przekazujemy wyraz do funkcji handle_word
+            data = handle_word(token, data);
             token = strtok_s(nullptr, " ", &context);
         }
         
-        switchlastmetars(lastmetars,data,counter);
+       // if(counter < 4) print_metar(data);
         counter++;
-        print_metar(lastmetars);
+        
 
        
-        cout << "Nacisnij Enter, aby zapisac ten METAR do pliku..." << endl;
-        cin.get();
-        //system("cls");
+        
+
+        
         save_metar(data, file2); 
-        cout << endl;
+      
     }
     file.close();
     file2.close();
 }
 
 
-
 void menu() {
     cout << "Imie Nazwisko Indeks" << endl;
     cout << "q - wyjdź z programu" << endl;
     cout << "o - wczytaj dane" << endl;
+    cout << "x - przejdz do generowania metara" << endl;
     char A;
 
     while (true) {
@@ -471,9 +678,14 @@ void menu() {
             exit(0);
         }
         if (A == 'o') {
-            system("cls");
+            
             program();
             
+        }
+        if (A == 'x') {
+            
+            generate_metar();
+
         }
     }
 
